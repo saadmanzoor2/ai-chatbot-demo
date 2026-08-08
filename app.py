@@ -1,21 +1,41 @@
 import streamlit as st
 from groq import Groq
 
-# Create the Groq client using the API key stored in .streamlit/secrets.toml
+# Create the Groq client using the API key stored in secrets
 client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
 # Configure the browser tab title and icon
-st.set_page_config(page_title="AI Chatbot", page_icon="🤖")
-st.title("AI Chatbot")
+st.set_page_config(page_title="Saad - AI Assistant", page_icon="🤖")
+st.title("Saad")
+st.caption("Your AI Assistant")
 
-# Initialize chat memory (only runs once, on the very first app load)
-# st.session_state persists data across Streamlit reruns
+# Sidebar - shows info about the bot and a clear chat button
+with st.sidebar:
+    st.header("About")
+    st.write("Hi, I'm **Saad** — your AI assistant.")
+    st.write("I'm here to help answer your questions and assist with whatever you need.")
+    st.divider()
+    st.caption("Powered by Groq · Llama 3.1")
+    if st.button("Clear Chat"):
+        st.session_state.messages = []
+        st.rerun()
+
+# Initialize chat memory with a system message so the AI knows its name and tone
 if "messages" not in st.session_state:
-    st.session_state.messages = []
+    st.session_state.messages = [
+        {"role": "system", "content": "Your name is Saad. You are a helpful, professional AI assistant. Always introduce yourself as Saad when asked your name. Keep responses clear and concise."}
+    ]
 
-# Redraw the full chat history on every rerun so past messages stay visible
+# Show a welcome message if this is a fresh conversation (no user messages yet)
+if len(st.session_state.messages) == 1:
+    st.info("👋 Hello! I'm Saad, your AI assistant. Feel free to ask me anything.")
+
+# Redraw the full chat history (skip the hidden system message)
 for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
+    if msg["role"] == "system":
+        continue
+    avatar = "🧑" if msg["role"] == "user" else "🤖"
+    with st.chat_message(msg["role"], avatar=avatar):
         st.write(msg["content"])
 
 # Show a chat input box at the bottom of the page
@@ -24,22 +44,20 @@ user_input = st.chat_input("Type your message...")
 if user_input:
     # Save the user's message to memory
     st.session_state.messages.append({"role": "user", "content": user_input})
-    # Immediately display the user's message
-    with st.chat_message("user"):
+    with st.chat_message("user", avatar="🧑"):
         st.write(user_input)
 
     # Send the full conversation history to the AI and get a response
-    with st.chat_message("assistant"):
+    with st.chat_message("assistant", avatar="🤖"):
         response = client.chat.completions.create(
-            model="llama-3.1-8b-instant",  # fast model, good for demos
-            messages=st.session_state.messages,  # full history = AI remembers context
-            stream=True  # get the reply in small chunks as it's generated
+            model="llama-3.1-8b-instant",
+            messages=st.session_state.messages,
+            stream=True
         )
-        # Display the reply live, chunk by chunk, like a typing effect
         reply = st.write_stream(
             chunk.choices[0].delta.content or ""
             for chunk in response
         )
 
-    # Save the AI's full reply to memory so future messages have context
+    # Save the AI's full reply to memory
     st.session_state.messages.append({"role": "assistant", "content": reply})
