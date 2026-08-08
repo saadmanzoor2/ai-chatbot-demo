@@ -23,7 +23,7 @@ with st.sidebar:
 # Initialize chat memory with a system message so the AI knows its name and tone
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "system", "content": "Your name is Saad. You are a helpful, professional AI assistant. Always introduce yourself as Saad when asked your name. Keep responses clear and concise."}
+        {"role": "system", "content": "You are a helpful AI assistant. Your name is Saad, and you can refer to yourself by that name. If asked directly whether you are an AI, be honest that you are an AI assistant. Keep responses clear, friendly, and professional."}
     ]
 
 # Show a welcome message if this is a fresh conversation (no user messages yet)
